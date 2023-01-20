@@ -19,8 +19,6 @@ The code is written in the Julia language, version 1.7.2 and uses the following 
 
 The file Primitives.jl defines all objects and functions that are used to solve and simulate the model.
 
-The file mainSolve.jl solves the model and creates .csv files with all the information that characterizes the solution.
+The file mainSolve.jl uses Primitives.jl to solve the model and create .csv files with all the information and data that characterize the solution.
 
-The file ResultsForPaper.jl generates the results in the quantitative analysis in Section 4.
-
-The folders Best, Best_highRho, Best_patient, and Best_sameVol contain .csv files with the model solution for the benchmark calibration as well as each of the counter-factual exercises. The file ResultsForPaper.jl can generate results using any of these exercises as a source.
+The file ResultsForPaper.jl generates the results in the quantitative analysis in Section 4. This file uses the .csv solution files created by mainSolve.jl and requires the user to specify the folder in which these files are.
