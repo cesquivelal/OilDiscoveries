@@ -8,7 +8,7 @@ https://cesquivelal.github.io/EsquivelGOFD.pdf
 
 # Data
 
-The folder Data contains the panel data used in Section 2 and STATA code for all regression exercises.
+The folder Data contains the panel data used in Section 2 in file Oil_Spreads_Macro.csv and STATA code for all regression exercises.
 
 # Quantitative solution of model
 
