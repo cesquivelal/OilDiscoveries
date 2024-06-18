@@ -2,13 +2,15 @@
 
 Replication code for "The Sovereign Default Risk of Giant Oil Discoveries" by Carlos Esquivel
 
-January, 2023:
+June, 2024:
 
 https://cesquivelal.github.io/EsquivelGOFD.pdf
 
 # Data
 
-The folder Data contains the panel data used in Section 2 in file Oil_Spreads_Macro.csv and STATA code for all regression exercises.
+The file EsquivelOilDiscoveries_data.csv contains the panel data used in Section 2.
+The file EmpiricalResults.do runs all regressions in STATA and saves the results in the file Regressions_Benchmark.xls (this file has to be then manually saved as a .xlsx file)
+The file EmpiricalResults.jl accesses the results saved in Regressions_Benchmark.xlsx (note the file extension is .xslx) and creates Figures 2, 3, 4, and 5.
 
 # Quantitative solution of model
 
