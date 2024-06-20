@@ -21,4 +21,4 @@ The code is written in the Julia language, version 1.7.2 and uses the following 
 
 The file ModelPrimitives.jl defines all objects and functions that are used to solve and simulate the model.
 
-The file ModelResults.jl uses ModelPrimitives.jl and EmpiricalResults.jl to solve the model and generate all the results in Tables 2, 3 and 4, and Figures 6 and 7.
+The file ModelResults.jl uses ModelPrimitives.jl and EmpiricalResults.jl to solve the model and generate all the results in Tables 2, 3 and 4, and Figures 6 and 7. This program reads the file Setup.csv, which defines parameter values for each quantitative exercise.
