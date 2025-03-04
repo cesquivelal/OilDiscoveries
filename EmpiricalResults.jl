@@ -84,175 +84,72 @@ function PlotImpulseResponse(name::String,units::String,npv::Float64,T::Int64,re
     return plt
 end
 
+
 ############################################
-###### Plot in main text
+###### Plots in main text
 ############################################
 function Plot_Figure_2(File::String,npv::Float64,T::Int64)
-    size_width=650
+    size_width=550
     size_height=400
     FILE=File
 
     #Spreads
-    name="spreads"
-    COLUMN=14
+    name=""
+    COLUMN=2
     reg=Read_Regression_Objects(FILE,COLUMN)
     units="percentage points"
-    plt_spreads=PlotImpulseResponse(name,units,npv,T,reg)
+    plt_spr=PlotImpulseResponse(name,units,npv,T,reg)
 
     #GDP
     name="GDP"
-    COLUMN=COLUMN+3
+    COLUMN=5
     reg=Read_Regression_Objects(FILE,COLUMN)
     units="percentage change"
     plt_gdp=PlotImpulseResponse(name,units,npv,T,reg)
 
-    #Investment
-    name="investment"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage of GDP"
-    plt_inv=PlotImpulseResponse(name,units,npv,T,reg)
-
     #Current account
     name="current account"
-    COLUMN=COLUMN+3
+    COLUMN=8
     reg=Read_Regression_Objects(FILE,COLUMN)
     units="percentage of GDP"
     plt_ca=PlotImpulseResponse(name,units,npv,T,reg)
 
-    #Create plot array
-    l = @layout([a b; c d])
-    plt=plot(plt_spreads,plt_gdp,plt_inv,plt_ca,
-             layout=l,size=(size_width*2,size_height*2))
-    FOLDER_GRAPHS="Graphs"
-    savefig(plt,"$FOLDER_GRAPHS\\Figure2.pdf")
-    return plt
-end
-npv=4.5; T=16
-RegressionsFile="Regressions_Benchmark.xlsx"
-fig_2=Plot_Figure_2(RegressionsFile,npv,T)
-
-function Plot_Figure_3(File::String,npv::Float64,T::Int64)
-    size_width=430
-    size_height=350
-    FILE=File
-
-    #Total consumption
-    name="total"
-    COLUMN=38
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage change"
-    plt_t=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Private consumption
-    name="private"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage change"
-    plt_p=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Government consumption
-    name="government"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage change"
-    plt_g=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Create plot array
-    l = @layout([a b c])
-    plt=plot(plt_t,plt_p,plt_g,
-             layout=l,size=(size_width*3,size_height*1))
-    FOLDER_GRAPHS="Graphs"
-    savefig(plt,"$FOLDER_GRAPHS\\Figure3.pdf")
-    return plt
-end
-RegressionsFile="Regressions_Benchmark.xlsx"
-fig_3=Plot_Figure_3(RegressionsFile,npv,T)
-
-function Plot_Figure_4(File::String,npv::Float64,T::Int64)
-    size_width=650
-    size_height=400
-    FILE=File
-
-    #FDI
-    name="net FDI position"
-    COLUMN=26
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage of GDP"
-    plt_fdi=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Net IIP
-    name="net IIP"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage of GDP"
-    plt_iip=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Primary balance
-    name="primary balance"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percentage of GDP"
-    plt_pba=PlotImpulseResponse(name,units,npv,T,reg)
-
     #Net government debt
     name="net government debt"
-    COLUMN=COLUMN+3
+    COLUMN=17
     reg=Read_Regression_Objects(FILE,COLUMN)
     units="percentage of GDP"
     plt_gde=PlotImpulseResponse(name,units,npv,T,reg)
 
     #Create plot array
-    l = @layout([a b; c d])
-    plt=plot(plt_fdi,plt_iip,plt_pba,plt_gde,
-             layout=l,size=(size_width*2,size_height*2))
-    FOLDER_GRAPHS="Graphs"
-    savefig(plt,"$FOLDER_GRAPHS\\Figure4.pdf")
-    return plt
+    l = @layout([a b c])
+    plt=plot(plt_gdp,plt_ca,plt_gde,
+             layout=l,size=(size_width*3,size_height*1))
+    return plt_spr, plt
 end
-RegressionsFile="Regressions_Benchmark.xlsx"
-fig_4=Plot_Figure_4(RegressionsFile,npv,T)
 
-function Plot_Figure_5(File::String,npv::Float64,T::Int64)
-    size_width=650
+function Plot_Consumption(File::String,npv::Float64,T::Int64)
+    size_width=550
     size_height=400
     FILE=File
 
-    #Share of investment in non-traded
-    name="share in non-traded"
-    COLUMN=2
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percent of total"
-    plt_N=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Share of investment in manufacturing
-    name="share in manufacturing"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percent of total"
-    plt_M=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Share of investment in commodities
-    name="share in commodities"
-    COLUMN=COLUMN+3
-    reg=Read_Regression_Objects(FILE,COLUMN)
-    units="percent of total"
-    plt_C=PlotImpulseResponse(name,units,npv,T,reg)
-
-    #Real exchange rate
-    name="real exchange rate"
-    COLUMN=COLUMN+3
+    #Spreads
+    name="private"
+    COLUMN=23
     reg=Read_Regression_Objects(FILE,COLUMN)
     units="percentage change"
-    plt_rer=PlotImpulseResponse(name,units,npv,T,reg)
+    plt_c=PlotImpulseResponse(name,units,npv,T,reg)
+
+    #GDP
+    name="public"
+    COLUMN=26
+    reg=Read_Regression_Objects(FILE,COLUMN)
+    units="percentage change"
+    plt_g=PlotImpulseResponse(name,units,npv,T,reg)
 
     #Create plot array
-    l = @layout([a b; c d])
-    plt=plot(plt_N,plt_M,plt_C,plt_rer,
-             layout=l,size=(size_width*2,size_height*2))
-    FOLDER_GRAPHS="Graphs"
-    savefig(plt,"$FOLDER_GRAPHS\\Figure5.pdf")
+    l = @layout([a b])
+    plt=plot(plt_c,plt_g,
+             layout=l,size=(size_width*2,size_height*1))
     return plt
 end
-RegressionsFile="Regressions_Benchmark.xlsx"
-fig_5=Plot_Figure_5(RegressionsFile,npv,T)
