@@ -14,18 +14,14 @@ FOLDER_GRAPHS="Graphs"
 RegressionsFile="Regressions_Benchmark.xlsx"
 npv=4.5; T=16
 fig_21, fig_22=Plot_Figure_2(RegressionsFile,npv,T)
-fig_21
-fig_22
 savefig(fig_21,"$FOLDER_GRAPHS\\Figure2.pdf")
 savefig(fig_22,"$FOLDER_GRAPHS\\Figure3.pdf")
 
-include("EmpiricalResults.jl")
 plt_con=Plot_Consumption(RegressionsFile,npv,T)
 savefig(plt_con,"$FOLDER_GRAPHS\\Figure4.pdf")
 
 RegressionsOnlyEMBI="Regressions_OnlyEMBI.xlsx"
 fig_2A, fig_22A=Plot_Figure_2(RegressionsOnlyEMBI,npv,T)
-fig_22A
 savefig(fig_22A,"$FOLDER_GRAPHS\\Figure3A.pdf")
 
 plt_con2=Plot_Consumption(RegressionsOnlyEMBI,npv,T)
@@ -41,8 +37,6 @@ MOD_Quant=SolveQuantitativeModel(country_column)
 N=100; T_LongRun=10000
 Conditional=true; Only_nL=true
 MOM=AverageMomentsManySamples_LongRun(N,T_LongRun,Conditional,Only_nL,MOD_Quant)
-MOM
-MOM.σ_con/MOM.σ_GDP
 
 #Parameters for simulation of paths
 N=10000           #10,000 paths
@@ -89,16 +83,12 @@ country_column=6
 MOD_Sell_D=SolveQuantitativeModel(country_column)
 
 TS_Sell_D=AverageDiscoveryPaths(DropDefaults,N,Tbefore,Tafter,MOD_Sell_D)
-include("ModelResults.jl")
 DropDefaults=true; Sell=true
 fig_10=Plot_Figure_5(Sell,WithData,RegressionsFile,npv,T,TS_Sell_D)
 savefig(fig_10,"$FOLDER_GRAPHS\\Figure10.pdf")
-
 
 Nwg=1000
 wg_Ben=AverageWelfareGains(Nwg,MOD_Quant)
 wg_DomField=AverageWelfareGains(Nwg,MOD_DomField)
 wg_OilEmbargo=AverageWelfareGains(Nwg,MOD_OilEmbargo)
 wg_Sell_D=AverageWelfareGains(Nwg,MOD_Sell_D)
-
-npv=ValueOfField(MOD_Sell_D.par)
