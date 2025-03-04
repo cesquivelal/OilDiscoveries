@@ -1,7 +1,7 @@
 ** Import full data base and do exercise with all possible observations
 clear all
 *set more off
-cd "C:\Users\ce265\Box\Research\Submitted Papers\OilDiscoveries\OilDiscoveries_2023_07_JIE_R&R\Draft"
+cd "C:\Users\ce265\Box\Research\Papers, submitted\OilDiscoveries\OilDiscoveries_2024_12_JIE_R&R_2ndRound\DraftAndCode"
 insheet using "EsquivelOilDiscoveries_data.csv"
 
 ** Sort variables, declare panel and destring main variable
@@ -52,29 +52,8 @@ gen `var'1=L.`var'
 *gen `var'4=L4.`var'
 }
 
-***********************************************************************
-****************** Figure 4, Dutch disease ****************************
-***********************************************************************
-*Use all countries due to data availablity for investment
-drop if year<1993 | year>2012
-
-*Share in non-traded
-gen ar1=shr_n1
-xtscc shr_n ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway replace noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(sh_n) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
-
-*Share in manufacturing
-replace ar1=shr_m1
-xtscc shr_m ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(sh_m) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
-
-*Share in commodities
-replace ar1=shr_cc1
-xtscc shr_cc ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(sh_c) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
-  
-*Use only EMBI countries hereafter
 drop if in_embi<1
+drop if year<1993 | year>2012
 
 ** Generate country specific quadratic trends
 egen tt=group(year)
@@ -96,30 +75,23 @@ local CS_quad_trend
 forvalues i=2/`dummax' {
   local CS_quad_trend `CS_quad_trend' ttsquare`i'
   }
-  
-*Real exchange rate
-replace ar1=ln_rer_def1
-xtscc ln_rer_def ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' `CS_quad_trend' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(rer) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
 
 ***********************************************************************
-********* Figure 2, spreads, GDP, investment, current account *********
+********************** Figure 2, spreads ******************************
 ***********************************************************************
-
 *Spreads
-replace ar1=spreads1
+gen ar1=spreads1
 xtscc spreads ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' `CS_quad_trend' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(spreads) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
+outreg2 using Regressions_Benchmark.xls, excel sideway replace noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(spreads) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
+
+***********************************************************************
+**************** Figure 3, GDP, current account ***********************
+***********************************************************************
 
 *GDP
 replace ar1=lngdplcu1
 xtscc lngdplcu ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' `CS_quad_trend' i.year , fe
 outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(gdp) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
-
-*Investment
-replace ar1=inv_gdp1
-xtscc inv_gdp ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(investment) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
 
 *Current account
 replace ar1=ca_gdp1
@@ -127,17 +99,12 @@ xtscc ca_gdp ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
 outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(ca) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
 
 ***********************************************************************
-************************ Figure 3, IIP ********************************
+************************ Figure 4, IIP ********************************
 ***********************************************************************
 *FDI net position, EWN data
 replace ar1=fdi_net_pos1
 xtscc fdi_net_pos ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
 outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(FDI) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
-
-*IIP net, EWN data
-replace ar1=net_iip1
-xtscc net_iip ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
-outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(net iip) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
 
 *Primary balance, EWN data
 replace ar1=prim_bal1
@@ -150,7 +117,7 @@ xtscc net_debt ar1 npv `npv_lag' int_p_dep `ln_oil_int_lag' i.year , fe
 outreg2 using Regressions_Benchmark.xls, excel sideway append noaster noparen auto(6) st(coef ci_low ci_high) level(90) ctitle(net debt) keep(ar1 npv `npv_lag') addtext(Country FE, Yes, Year FE, Yes)
 
 ***********************************************************************
-********************* Figure 4, Consumption ***************************
+********************* Figure 5, Consumption ***************************
 ***********************************************************************
 *consumption
 replace ar1=lncon_tot1
