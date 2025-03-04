@@ -1,139 +1,415 @@
+#Assumes that ModelPrimitives.jl is already called
 
-using Distributed
-addprocs(39) #add all available additional processors,
-             #solution of model is slow and exploits parallelization
+function SolveTwoCanonicalModels(country_column::Int64)
+    XX=readdlm("Setup.csv",',')
+    VEC=XX[2:end,country_column]*1.0
+    par=UnpackParameters_Vector(VEC)
+    GRIDS=CreateGrids(par)
 
-################################################################################
-#### Solve model with different parameterizations and save solutions in csv ####
-################################################################################
-#The file "ModelPrimitives.jl" contains all functions that are used to solve
-#the model and generate model simulations
-@everywhere include("ModelPrimitives.jl")
-@everywhere XX=readdlm("Setup.csv",',')
-@everywhere VEC=XX[2:end,2]*1.0
-@everywhere nHfactor=1.22
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
+    PrintProgress=true
+    par=Pars(par,OilImmune=false)
+    MOD_Cost_to_total=SolveModel_VFI(PrintProgress,GRIDS,par)
 
-@everywhere NAME="OilDiscoveries.csv"
-@everywhere Parallel=true
-@everywhere PrintProgress=true
-@everywhere SaveProgress=true
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
+    par=Pars(par,OilImmune=true)
+    MOD_No_Cost_to_oil=SolveModel_VFI(PrintProgress,GRIDS,par)
 
-@everywhere NAME="OilDiscoveries_higherAlfa0.csv"
-@everywhere VEC=XX[2:end,3]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
+    return MOD_Cost_to_total, MOD_No_Cost_to_oil
+end
 
-@everywhere NAME="OilDiscoveries_impatient.csv"
-@everywhere VEC=XX[2:end,4]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
+function SolveQuantitativeModel(country_column::Int64)
+    XX=readdlm("Setup.csv",',')
+    VEC=XX[2:end,country_column]*1.0
+    par=UnpackParameters_Vector(VEC)
+    GRIDS=CreateGrids(par)
 
-@everywhere NAME="OilDiscoveries_fix.csv"
-@everywhere VEC=XX[2:end,5]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
+    PrintProgress=true
+    MOD_Quant=SolveModel_VFI(PrintProgress,GRIDS,par)
 
-@everywhere NAME="OilDiscoveries_put.csv"
-@everywhere VEC=XX[2:end,6]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
-
-@everywhere NAME="OilDiscoveries_riskNeutral.csv"
-@everywhere VEC=XX[2:end,7]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
-
-@everywhere NAME="OilDiscoveries_Patient.csv"
-@everywhere VEC=XX[2:end,8]*1.0
-@everywhere par=UnpackParameters_Vector(nHfactor,VEC)
-@everywhere GRIDS=CreateGrids(par)
-SolveAndSaveModel_VFI(Parallel,PrintProgress,SaveProgress,NAME,GRIDS,par)
+    return MOD_Quant
+end
 
 ################################################################################
-############### Compute moments from models, Table 2 and Table 3 ###############
+### Results for paper
 ################################################################################
-#Benchmark:
-FOLDER=" " #Folder where csv files with solutions are saved
-NAME="OilDiscoveries.csv"
-MODEL=UnpackModel_Vector(nHfactor,NAME,FOLDER)
-N=1000; Tmom=300 #1000 samples with 300 periods
-MOM=AverageMomentsManySamples(N,Tmom,MODEL) #Object with all moments
-#Moments in Tables 2 and 3:
-MOM.DefaultPr
-MOM.Av_Spreads
-MOM.Av_RP_Spr
-MOM.σ_Spreads
-MOM.Debt_GDP
-MOM.σ_con/MOM.σ_GDP
-MOM.σ_GDP
-MOM.σ_TB
-MOM.σ_CA
-MOM.σ_RER
-MOM.Corr_Spreads_GDP
-MOM.Corr_TB_GDP
-MOM.Corr_CA_GDP
-MOM.Corr_RER_GDP
+#Simple model, oil penalty vs oil immune
+function Plot_Figure_3(Tafter::Int64,TS_Ben::Paths,TS_Oi::Paths)
+    #Details for graphs
+    npv=4.5
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
 
-NAME="OilDiscoveries_impatient.csv"
-MODEL_impatient=UnpackModel_Vector(nHfactor,NAME,FOLDER)
-MOM_impatient=AverageMomentsManySamples(N,Tmom,MODEL_impatient)
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["penalty to total income" "oil income immune"]
+    LINESTYLES=[:solid :dash]
+    COLORS=[:blue :green]
 
-NAME="OilDiscoveries_higherAlfa0.csv"
-MODEL_higher=UnpackModel_Vector(nHfactor,NAME,FOLDER)
-MOM_higher=AverageMomentsManySamples(N,Tmom,MODEL_higher)
+    #Plot Spreads
+    TITLE="spreads"
+    mod=TS_Ben.Spreads[2:t1+2] .- TS_Ben.Spreads[1]
+    mod2=TS_Oi.Spreads[2:t1+2] .- TS_Oi.Spreads[1]
+    plt_spreads=plot([t0:t1],[mod mod2],label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,title=TITLE,
+        ylabel="percentage points",xlabel="t",#ylims=[-0.05,1.3],
+        legend=:topright,size=SIZE_PLOTS,linewidth=LW)
 
-################################################################################
-################### Simulate discovery paths, Figure 6 and 7 ###################
-################################################################################
-FOLDER_GRAPHS="Graphs" #Folder to store graphs
-FILE_REGRESSIONS="Regressions_Benchmark.xlsx" #Excel file with STATA output
-                                              #make sure file extension is xlsx
-#Parameters for simulation of paths
-FixedShocks=false #Do not fix shocks to their mean
-N=10000           #10,000 paths
-Tbefore=1         #Return one period before discovery (will be benchmark for changes)
-Tafter=16         #Periods after discovery, make it more than 15 for graphs to work
+    #Plot GDP
+    TITLE="GDP"
+    mod=100*(log.(TS_Ben.GDP[2:t1+2]) .- log.(TS_Ben.GDP[1]))
+    mod2=100*(log.(TS_Oi.GDP[2:t1+2]) .- log.(TS_Oi.GDP[1]))
+    plt_gdp=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,label=LABELS)
 
-#Unpack risk neutral version
-NAME="OilDiscoveries_riskNeutral.csv"
-MODEL_RN=UnpackModel_Vector(nHfactor,NAME,FOLDER)
+    #Plot current account
+    TITLE="current account"
+    mod01=100*TS_Ben.CA ./ (1*TS_Ben.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    mod02=100*TS_Oi.CA ./ (1*TS_Oi.GDP)
+    mod2=mod02[2:t1+2] .- mod02[1]
+    plt_CA=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
 
-#Path series with benchmark
-TS_D, TS_ND=AverageDiscoveryPaths(FixedShocks,N,Tbefore,Tafter,MODEL)
-#Path series with higher α0
-TS_D_higher, TS_ND_higher=AverageDiscoveryPaths(FixedShocks,N,Tbefore,Tafter,MODEL_higher)
-#Path series with risk neutral
-TS_D_RN, TS_ND_RN=AverageDiscoveryPaths(FixedShocks,N,Tbefore,Tafter,MODEL_RN)
+    #Plot government debt
+    TITLE="government debt"
+    mod01=100*TS_Ben.B ./ (1*TS_Ben.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    mod02=100*TS_Oi.B ./ (1*TS_Oi.GDP)
+    mod2=mod02[2:t1+2] .- mod02[1]
+    plt_B=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
 
-#Create and save Figure 6 and 7
-plt_6=Plot_Figure_6_with3Mods(FOLDER_GRAPHS,FILE_REGRESSIONS,TS_D,TS_D_higher,TS_D_RN,MODEL)
-plt_7=Plot_Figure_7(FOLDER_GRAPHS,TS_D,MODEL)
+    #Plot consumption
+    TITLE="consumption"
+    mod=100*(log.(TS_Ben.Cons[2:t1+2]) .- log.(TS_Ben.Cons[1]))
+    mod2=100*(log.(TS_Oi.Cons[2:t1+2]) .- log.(TS_Oi.Cons[1]))
+    plt_c=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,label=LABELS)
 
-################################################################################
-########################### Welfare gains, Table 4 #############################
-################################################################################
-N=1000 #Average over 1,000 draws from the ergodic distribution
-#Welfare gains in benchmark model
-wg=AverageWelfareGains(N,MODEL)
+    #Create plot array
+    l = @layout([a b])
+    plt=plot(plt_spreads,plt_gdp,
+             layout=l,size=(size_width*2,size_height*1))
+    return plt
+end
 
-#Welfare gains in model with high risk aversion
+function Plot_Figure_5_WithData(FileRegs::String,npv::Float64,Tafter::Int64,TS_Mod::Paths)
+    #Details for graphs
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
 
-wg_highα=AverageWelfareGains(N,MODEL_higher)
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["data" "model" "" ""]
+    LINESTYLES=[:solid :dash :dot :dot]
+    COLORS=[:black :green :black :black]
 
-#Welfare gains in model with fixed oil price
-NAME="OilDiscoveries_fix.csv"
-MODEL_fix=UnpackModel_Vector(nHfactor,NAME,FOLDER)
-wg_fix=AverageWelfareGains(N,MODEL_fix)
+    #Plot Spreads
+    TITLE="spreads"
+    COLUMN=2
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod=TS_Mod.Spreads[2:t1+2] .- TS_Mod.Spreads[1]
+    plt_spreads=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,title=TITLE,
+        ylabel="percentage points",xlabel="t",#ylims=[-0.05,1.3],
+        legend=:topright,size=SIZE_PLOTS,linewidth=LW)
 
-#Welfare gains in model with put options
-NAME="OilDiscoveries_put.csv"
-MODEL_put=UnpackModel_Vector(nHfactor,NAME,FOLDER)
-wg_put=AverageWelfareGains(N,MODEL_put)
+    #Plot GDP
+    TITLE="GDP"
+    COLUMN=5
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod=100*(log.(TS_Mod.GDP[2:t1+2]) .- log.(TS_Mod.GDP[1]))
+    plt_gdp=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,label=LABELS)
+
+    #Plot current account
+    TITLE="current account"
+    COLUMN=8
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod01=100*TS_Mod.CA ./ (1*TS_Mod.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    plt_CA=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot government debt
+    TITLE="government debt"
+    COLUMN=17
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod01=100*TS_Mod.B ./ (1*TS_Mod.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    plt_B=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot private consumption
+    TITLE="private consumption"
+    COLUMN=23
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod=100*(log.(TS_Mod.Cons[2:t1+2]) .- log.(TS_Mod.Cons[1]))
+    plt_c=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot government consumption
+    TITLE="government consumption"
+    COLUMN=26
+    reg=Read_Regression_Objects(FileRegs,COLUMN)
+    Δy, cilow, cihigh=ImpulseResponse_TS(npv,Tafter,reg)
+    mod=100*(log.(TS_Mod.G[2:t1+2]) .- log.(TS_Mod.G[1]))
+    plt_g=plot([t0:t1],[Δy[2:end] mod cilow[2:end] cihigh[2:end]],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Create plot array
+    l = @layout([a b; c d; e f])
+    plt=plot(plt_spreads,plt_gdp,
+             plt_CA,plt_B,plt_c,plt_g,
+             layout=l,size=(size_width*2,size_height*3))
+    return plt
+end
+
+function Plot_Figure_5_JustModel(Sell::Bool,npv::Float64,Tafter::Int64,TS_Mod::Paths)
+    #Details for graphs
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
+
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["data" "model" "" ""]
+    LINESTYLES=[:solid :dash :dot :dot]
+    COLORS=[:black :green :black :black]
+
+    #Plot Spreads
+    TITLE="spreads"
+    mod=TS_Mod.Spreads[2:t1+2] .- TS_Mod.Spreads[1]
+    plt_spreads=plot([t0:t1],mod,label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,title=TITLE,
+        ylabel="percentage points",xlabel="t",#ylims=[-0.05,1.3],
+        legend=false,size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot GDP
+    TITLE="GDP"
+    mod=100*(log.(TS_Mod.GDP[2:t1+2]) .- log.(TS_Mod.GDP[1]))
+    plt_gdp=plot([t0:t1],mod,legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,label=LABELS)
+
+    #Plot current account
+    TITLE="current account"
+    mod01=100*TS_Mod.CA ./ (1*TS_Mod.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    plt_CA=plot([t0:t1],mod,legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot government debt
+    TITLE="government debt"
+    mod01=100*TS_Mod.B ./ (1*TS_Mod.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    plt_B=plot([t0:t1],mod,legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot private consumption
+    if Sell
+        YLIMS_C=[-1.0,35.0]
+    else
+        YLIMS_C=[-1.0,13.0]
+    end
+    TITLE="private consumption"
+    mod=100*(log.(TS_Mod.Cons[2:t1+2]) .- log.(TS_Mod.Cons[1]))
+    plt_c=plot([t0:t1],mod,legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,ylims=YLIMS_C)
+
+    #Plot government consumption
+    TITLE="government consumption"
+    mod=100*(log.(TS_Mod.G[2:t1+2]) .- log.(TS_Mod.G[1]))
+    plt_g=plot([t0:t1],mod,legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)#,ylims=YLIMS_C)
+
+    #Create plot array
+    l = @layout([a b; c d; e f])
+    plt=plot(plt_spreads,plt_gdp,
+             plt_CA,plt_B,plt_c,plt_g,
+             layout=l,size=(size_width*2,size_height*3))
+    return plt
+end
+
+function Plot_Figure_5(Sell::Bool,WithData::Bool,FileRegs::String,npv::Float64,Tafter::Int64,TS_Mod::Paths)
+    if WithData
+        return Plot_Figure_5_WithData(FileRegs,npv,Tafter,TS_Mod)
+    else
+        return Plot_Figure_5_JustModel(Sell,npv,Tafter,TS_Mod)
+    end
+end
+
+function PlotFigure_6(Tafter::Int64,TS_Mod::Paths)
+    #Details for graphs
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
+
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["data" "model" "" ""]
+    LINESTYLES=[:solid :dash :dot :dot]
+    COLORS=[:black :green :black :black]
+
+    #Plot in default
+    mod=TS_Mod.Def[2:t1+2]
+    plt_Def=plot([t0:t1],mod,label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,
+        ylabel="fraction in default",xlabel="t",
+        legend=false,size=SIZE_PLOTS,linewidth=LW)
+
+    return plt_Def
+end
+
+function Plot_Figure_8(Tafter::Int64,TS_DomField::Paths,TS_OilEmbargo::Paths)
+    #Details for graphs
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
+
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["domestic field" "oil embargo"]
+    LINESTYLES=[:solid :dash]
+    COLORS=[:green :orange]
+
+    #Plot Spreads
+    TITLE="spreads"
+    mod=TS_DomField.Spreads[2:t1+2] .- TS_DomField.Spreads[1]
+    mod2=TS_OilEmbargo.Spreads[2:t1+2] .- TS_OilEmbargo.Spreads[1]
+    plt_spreads=plot([t0:t1],[mod mod2],label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,title=TITLE,
+        ylabel="percentage points",xlabel="t",
+        legend=:topright,size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot GDP
+    TITLE="GDP"
+    mod=100*(log.(TS_DomField.GDP[2:t1+2]) .- log.(TS_DomField.GDP[1]))
+    mod2=100*(log.(TS_OilEmbargo.GDP[2:t1+2]) .- log.(TS_OilEmbargo.GDP[1]))
+    plt_gdp=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,label=LABELS)
+
+    #Plot current account
+    TITLE="current account"
+    mod01=100*TS_DomField.CA ./ (1*TS_DomField.GDP)
+    mod02=100*TS_OilEmbargo.CA ./ (1*TS_OilEmbargo.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    mod2=mod02[2:t1+2] .- mod02[1]
+    plt_CA=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot government debt
+    TITLE="government debt"
+    mod01=100*TS_DomField.B ./ (1*TS_DomField.GDP)
+    mod02=100*TS_OilEmbargo.B ./ (1*TS_OilEmbargo.GDP)
+    mod=mod01[2:t1+2] .- mod01[1]
+    mod2=mod02[2:t1+2] .- mod02[1]
+    plt_B=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage of GDP",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW)
+
+    #Plot private consumption
+    YLIMS_C=[-1.0,16.0]
+    TITLE="private consumption"
+    mod=100*(log.(TS_DomField.Cons[2:t1+2]) .- log.(TS_DomField.Cons[1]))
+    mod2=100*(log.(TS_OilEmbargo.Cons[2:t1+2]) .- log.(TS_OilEmbargo.Cons[1]))
+    plt_c=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,ylims=YLIMS_C)
+
+    #Plot government consumption
+    TITLE="government consumption"
+    mod=100*(log.(TS_DomField.G[2:t1+2]) .- log.(TS_DomField.G[1]))
+    mod2=100*(log.(TS_OilEmbargo.G[2:t1+2]) .- log.(TS_OilEmbargo.G[1]))
+    plt_g=plot([t0:t1],[mod mod2],legend=false,
+        linestyle=LINESTYLES,title=TITLE,linecolor=COLORS,
+        ylabel="percentage change",xlabel="t",
+        size=SIZE_PLOTS,linewidth=LW,ylims=YLIMS_C)
+
+    #Create plot array
+    l = @layout([a b; c d; e f])
+    plt=plot(plt_spreads,plt_gdp,
+             plt_CA,plt_B,plt_c,plt_g,
+             layout=l,size=(size_width*2,size_height*3))
+    return plt
+end
+
+function PlotFigure_9(Tafter::Int64,TS_DomField::Paths,TS_OilEmbargo::Paths)
+    #Details for graphs
+    tend=Tafter-1#15
+    t0=0
+    t1=tend
+
+    #Details for plots
+    size_width=600
+    size_height=400
+    SIZE_PLOTS=(size_width,size_height)
+    LW=3.0
+    LABELS=["domestic field" "oil embargo"]
+    LINESTYLES=[:solid :dash]
+    COLORS=[:green :orange]
+
+    #Plot in default
+    mod=TS_DomField.Def[2:t1+2]
+    mod2=TS_OilEmbargo.Def[2:t1+2]
+    plt_Def=plot([t0:t1],[mod mod2],label=LABELS,
+        linestyle=LINESTYLES,linecolor=COLORS,
+        ylabel="fraction in default",xlabel="t",
+        legend=:bottomright,size=SIZE_PLOTS,linewidth=LW)
+
+    return plt_Def
+end
