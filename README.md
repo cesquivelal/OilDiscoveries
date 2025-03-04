@@ -2,7 +2,7 @@
 
 Replication code for "The Sovereign Default Risk of Giant Oil Discoveries" by Carlos Esquivel
 
-June, 2024:
+March, 2025:
 
 https://cesquivelal.github.io/EsquivelGOFD.pdf
 
@@ -10,7 +10,7 @@ https://cesquivelal.github.io/EsquivelGOFD.pdf
 
 The file EsquivelOilDiscoveries_data.csv contains the panel data used in Section 2.
 The file EmpiricalResults.do runs all regressions in STATA and saves the results in the file Regressions_Benchmark.xls (this file has to be then manually saved as a .xlsx file)
-The file EmpiricalResults.jl accesses the results saved in Regressions_Benchmark.xlsx (note the file extension is .xslx) and creates Figures 2, 3, 4, and 5.
+The file EmpiricalResults.jl has functions to access the results saved in Regressions_Benchmark.xlsx (note the file extension is .xslx) and create Figures 2, 3, and 4.
 
 # Model
 
@@ -20,5 +20,6 @@ The code is written in the Julia language, version 1.7.2 and uses the following 
       SparseArrays, QuadGK, Sobol, Roots, NLsolve, Plots
 
 The file ModelPrimitives.jl defines all objects and functions that are used to solve and simulate the model.
+The file ModelResults.jl has functions to use the model solution and simulations to create Tables 2, 3 and 4, and Figures 5 through 10.
 
-The file ModelResults.jl uses ModelPrimitives.jl and EmpiricalResults.jl to solve the model and generate all the results in Tables 2, 3 and 4, and Figures 6 and 7. This program reads the file Setup.csv, which defines parameter values for each quantitative exercise.
+The file PaperResults.jl uses ModelPrimitives.jl, EmpiricalResults.jl, and ModelResults.jl to solve all versions of the model and generate all the results in the paper.
