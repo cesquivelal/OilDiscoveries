@@ -2,7 +2,7 @@
 
 Replication code for "The Sovereign Default Risk of Giant Oil Discoveries" by Carlos Esquivel
 
-March, 2025:
+July, 2025:
 
 https://cesquivelal.github.io/EsquivelGOFD.pdf
 
@@ -15,12 +15,13 @@ The file EmpiricalResults.jl has functions to access the results saved in Regres
 # Model
 
 The code is written in the Julia language, version 1.7.2 and uses the following packages:
-      Distributed, Parameters, Interpolations, Optim, SharedArrays, DelimitedFiles,
+      Parameters, Interpolations, Optim, SharedArrays, DelimitedFiles,
       Distributions, FastGaussQuadrature, LinearAlgebra, Random, Statistics,
-      SparseArrays, QuadGK, Sobol, Roots, NLsolve, Plots
+      SparseArrays, Sobol, Roots
 
 The file ModelPrimitives.jl defines all objects and functions that are used to solve and simulate the model.
 The file ModelResults.jl has functions to use the model solution and simulations to create Tables 2, 3 and 4, and Figures 5 through 10.
+The file Setup_Calibrated.csv contains data to setup the different parameterizations used in the paper.
 
 # Paper results
 
