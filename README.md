@@ -58,8 +58,7 @@ found.
 
 ## How long it takes, and the `UseSavedFile` switch
 
-Section I is fast — the regressions are already estimated by then, and the ICIO table is built
-from a panel that ships with the package.
+Section I is fast.
 
 Section III is not. `UseSavedFile` is the first line under its banner and is **`false`**, which
 re-solves every model from scratch. One model takes roughly 45 minutes, and the driver solves
@@ -69,11 +68,7 @@ serialized to `Code_Model/Model_*.csv` as it finishes, about 4.4 MB each. They a
 Setting `UseSavedFile=true` reloads those files instead of re-solving, which is how to re-draw a
 figure or re-write a table after a first full run. It fails if the files are not there.
 
-A re-solve does not reproduce a previous run bit for bit — BLAS threading makes the value
-function iteration mildly non-deterministic — but it agrees to about 1e-6 in relative terms,
-which is far below anything the paper reports.
-
-## What is here
+## Files with code
 
 ```
 PaperResults.jl              driver: runs everything, writes every figure and table
@@ -99,9 +94,9 @@ Code_Data/
 
 `Build_ICIO_Panel` rebuilds `ICIO_Technology_Panel.csv` from the OECD source archives. It
 downloads about 600 MB and takes some forty minutes, so the call is left commented out in the
-driver and the panel it writes ships with the package instead.
+driver and the panel it writes is included with the package instead.
 
-## What it writes
+## Output
 
 `Graphs/` gets Figures 2 to 9 and 11 to 24, one PDF each, named for the figure number in the
 paper. Figures 1 and 10 are not produced by code and are not in this package.
