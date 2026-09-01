@@ -1,11 +1,8 @@
 # The Sovereign Default Risk of Giant Oil Discoveries — replication package
 
-Carlos Esquivel, Rutgers University.
+Replication code for "The Sovereign Default Risk of Giant Oil Discoveries" by Carlos Esquivel
 
-Everything the paper reports is produced by the code in this folder. The package is
-self-contained: copy it anywhere and it runs from there. Figure and table files are named
-for the number they carry in the paper, so `Graphs/Figure8.pdf` is Figure 8 and
-`Tables/Table4_rows.tex` is Table 4.
+August, 2026: https://cesquivelal.github.io/EsquivelGOFD.pdf
 
 ## Run order
 
