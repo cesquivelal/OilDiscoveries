@@ -1509,10 +1509,6 @@ function RelevantDistances(PrintProg::Bool,cnt::Int64,MODEL_CURRENT::Model,MODEL
     dst_D, dst_P, Iv, NotConvPct_P=ComputeDistanceV(MODEL_CURRENT,MODEL_NEXT)
     dst_V=max(dst_D,dst_P)
 
-    if PrintProg
-        println("cnt=$cnt, dst_D=$dst_D, dst_P=$dst_P at $Iv, $NotConvPct_P% of V not converged, dst_q=$dst_q")
-    end
-
     return dst_V, dst_q
 end
 
